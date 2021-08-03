@@ -1,6 +1,6 @@
 # Once-Upon-A-Book
 
-This app is an electronic library. Something like Kindel but from Wish
+This app is an electronic library.
 
 # To Do
 - Add missing functionality, register automatically with google, add pdf files from phone
