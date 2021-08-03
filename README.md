@@ -1,5 +1,7 @@
 # Once-Upon-A-Book
 
+This app is an electronic library. Something like Kindel but from Wish
+
 # To Do
 - Add missing functionality
 
