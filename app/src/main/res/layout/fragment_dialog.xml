@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/welcomeText"
+        android:layout_width="415dp"
+        android:layout_height="100dp"
+        android:text="Hello"
+        android:textSize="30sp"
+        android:gravity="center"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/manageAccount"
+        android:layout_width="match_parent"
+        android:layout_height="50sp"
+        android:gravity="center|start"
+        android:paddingStart="20sp"
+        android:textSize="20sp"
+        android:text="Manage Your Account"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/welcomeText" />
+
+    <TextView
+        android:id="@+id/homePage"
+        android:layout_width="match_parent"
+        android:layout_height="50sp"
+        android:gravity="center|start"
+        android:paddingStart="20sp"
+        android:textSize="20sp"
+        android:text="Homepage"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/manageAccount" />
+
+    <TextView
+        android:id="@+id/library"
+        android:layout_width="match_parent"
+        android:layout_height="50sp"
+        android:paddingStart="20sp"
+        android:textSize="20sp"
+        android:text="Your Library"
+        android:gravity="center|start"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/homePage" />
+
+    <TextView
+        android:id="@+id/logOut"
+        android:layout_width="match_parent"
+        android:layout_height="50sp"
+        android:gravity="center|start"
+        android:paddingStart="20sp"
+        android:text="Log Out"
+        android:textSize="20sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/library" />
+
+    <TextView
+        android:id="@+id/tvAdminPanel"
+        android:layout_width="match_parent"
+        android:layout_height="50sp"
+        android:gravity="center|start"
+        android:paddingStart="20sp"
+        android:text="Admin Panel"
+        android:textSize="20sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/logOut" />
+</androidx.constraintlayout.widget.ConstraintLayout>
