@@ -1,18 +1,16 @@
 package com.example.onceuponabook.fragments;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Parcelable;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -21,10 +19,10 @@ import androidx.fragment.app.DialogFragment;
 import com.example.onceuponabook.AccountActivity;
 import com.example.onceuponabook.AdminActivity;
 import com.example.onceuponabook.ApiInterface;
-import com.example.onceuponabook.BookActivity;
 import com.example.onceuponabook.DefaultActivity;
 import com.example.onceuponabook.R;
 import com.example.onceuponabook.StartActivity;
+import com.example.onceuponabook.UploadBookActivity;
 import com.example.onceuponabook.models.Book;
 import com.example.onceuponabook.models.BooksBought;
 import com.example.onceuponabook.models.User;
@@ -43,7 +41,7 @@ import retrofit2.Response;
 
 public class MenuFragmentDialog extends DialogFragment implements View.OnClickListener {
 
-    private TextView tvLogOut, tvWelcomeText, tvAdminPanel, tvManageAccount, tvHomePage, tvLibrary;
+    private TextView tvLogOut, tvWelcomeText, tvAdminPanel, tvManageAccount, tvHomePage, tvLibrary, upload_file;
     GoogleSignInClient mGoogleSignInClient;
     Context mContext;
     Call<List<User>> callUsers;
@@ -55,6 +53,14 @@ public class MenuFragmentDialog extends DialogFragment implements View.OnClickLi
     User mUser;
     ApiInterface apiInterface;
     private static final String TAG = "DialogFragment";
+
+    private static final int PERMISSION_REQUEST_CODE = 1;
+    private static final int REQUEST_GALLERY = 200;
+    private long downloadId;
+
+    TextView file_name;
+    String file_path=null;
+    Button upload;
 
     public MenuFragmentDialog() {
         // Required empty public constructor
@@ -87,27 +93,37 @@ public class MenuFragmentDialog extends DialogFragment implements View.OnClickLi
         tvManageAccount = view.findViewById(R.id.manageAccount);
         tvHomePage = view.findViewById(R.id.homePage);
         tvLibrary = view.findViewById(R.id.library);
+        upload_file = view.findViewById(R.id.tvUploadFile);
+        upload_file.setVisibility(View.GONE);
 
         mSelectedBooks = new ArrayList<>();
 
         if(account != null) {
             tvWelcomeText.setText("Hello, " + account.getGivenName() + "!");
 
-            if (account.getEmail().equals("galinzhekov@gmail.com")) {
-                tvAdminPanel.setVisibility(View.VISIBLE);
-            }
-
             apiInterface = ApiClient.getApiClient().create(ApiInterface.class);
 
-            callUsers = apiInterface.getUsers();
+            callUsers = apiInterface.getUsers(
+                    ApiClient.PASSWORD,
+                    "read_users"
+            );
             callUsers.enqueue(new Callback<List<User>>() {
                 @Override
                 public void onResponse(Call<List<User>> call, Response<List<User>> response) {
                     users = response.body();
-                    for (User user : users) {
-                        if (user.getEmail().equals(account.getEmail())) {
-                            mUser = user;
-                            break;
+                    if (users != null) {
+                        for (User user : users) {
+                            if (user.getEmail().equals(account.getEmail())) {
+                                mUser = user;
+                                break;
+                            }
+                        }
+
+                        if (mUser.getPosition_id() == 1) {
+                            tvAdminPanel.setVisibility(View.VISIBLE);
+                        }
+                        if (mUser.getPosition_id() == 1 || mUser.getPosition_id() == 3) {
+                            upload_file.setVisibility(View.VISIBLE);
                         }
                     }
                 }
@@ -124,6 +140,7 @@ public class MenuFragmentDialog extends DialogFragment implements View.OnClickLi
         tvHomePage.setOnClickListener(this);
         tvLibrary.setOnClickListener(this);
         tvAdminPanel.setOnClickListener(this);
+        upload_file.setOnClickListener(this);
 
         getDialog().getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
     }
@@ -142,21 +159,31 @@ public class MenuFragmentDialog extends DialogFragment implements View.OnClickLi
                 break;
             case R.id.manageAccount:
                 Intent intent = new Intent(mContext, AccountActivity.class);
+                Log.v(TAG, String.valueOf(mUser));
                 intent.putExtra("selected_user", mUser);
                 startActivity(intent);
                 break;
             case R.id.homePage:
+                dismiss();
                 Intent intent1 = new Intent(mContext, StartActivity.class);
                 startActivity(intent1);
                 break;
             case R.id.library:
+                dismiss();
                 Intent intent2 = new Intent(mContext, DefaultActivity.class);
                 intent2.putExtra("selected_user", mUser);
                 startActivity(intent2);
                 break;
             case R.id.tvAdminPanel:
+                dismiss();
                 Intent intent3 = new Intent(mContext, AdminActivity.class);
                 startActivity(intent3);
+                break;
+            case R.id.tvUploadFile:
+                dismiss();
+                Intent intent4 = new Intent(mContext, UploadBookActivity.class);
+                intent4.putExtra("userId", mUser.getUser_id());
+                startActivity(intent4);
                 break;
         }
     }
@@ -166,5 +193,4 @@ public class MenuFragmentDialog extends DialogFragment implements View.OnClickLi
             startActivity(new Intent(mContext, StartActivity.class));
         });
     }
-
 }

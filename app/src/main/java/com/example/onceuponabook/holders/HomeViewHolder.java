@@ -1,6 +1,5 @@
 package com.example.onceuponabook.holders;
 
-import android.net.Uri;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -36,7 +35,7 @@ public class HomeViewHolder extends RecyclerView.ViewHolder implements View.OnCl
         tvHomeItemPrice = itemView.findViewById(R.id.tvHomeItemPrice);
         tvHomeItemImage = itemView.findViewById(R.id.tvHomeItemImage);
         mOnItemListener = onItemListener;
-        itemView.setOnClickListener(this::onClick);
+        itemView.setOnClickListener(this);
     }
 
     @Override

@@ -87,32 +87,40 @@ public class DefaultActivity extends AppCompatActivity implements OnItemListener
         apiInterface = ApiClient.getApiClient().create(ApiInterface.class);
 
         if (getIntent().hasExtra("selected_user")) {
-            callBooks = apiInterface.getBooks();
+            callBooks = apiInterface.getBooks(
+                    ApiClient.PASSWORD,
+                    "read_book"
+            );
             callBooks.enqueue(new Callback<List<Book>>() {
                 @Override
                 public void onResponse(Call<List<Book>> call, Response<List<Book>> response) {
                     mBooks = response.body();
                     mUser = getIntent().getParcelableExtra("selected_user");
                     mSelectedBooks = new ArrayList<>();
-                    callBooksBought = apiInterface.getBooksBought();
+                    callBooksBought = apiInterface.getBooksBought(
+                            ApiClient.PASSWORD,
+                            "read_books_bought"
+                    );
                     callBooksBought.enqueue(new Callback<List<BooksBought>>() {
                         @Override
                         public void onResponse(Call<List<BooksBought>> call, Response<List<BooksBought>> response) {
                             mBooksBought = response.body();
-                            for (Book book : mBooks) {
-                                for (BooksBought booksBought : mBooksBought) {
-                                    if (booksBought.getBook_id() == book.getId() && booksBought.getUser_id() == mUser.getUser_id()) {
-                                        mSelectedBooks.add(book);
+                            if (mBooks != null && mBooksBought != null) {
+                                for (Book book : mBooks) {
+                                    for (BooksBought booksBought : mBooksBought) {
+                                        if (booksBought.getBook_id() == book.getId() && booksBought.getUser_id() == mUser.getUser_id()) {
+                                            mSelectedBooks.add(book);
+                                        }
                                     }
+                                    mOTL2 = (v, iPosition) -> {
+                                        Intent intent = new Intent(getApplicationContext(), BookActivity.class);
+                                        intent.putExtra("selected_book", mSelectedBooks.get(iPosition));
+                                        startActivity(intent);
+                                    };
                                 }
-                                mOTL2 = (v, iPosition) -> {
-                                    Intent intent = new Intent(getApplicationContext(), BookActivity.class);
-                                    intent.putExtra("selected_book", mSelectedBooks.get(iPosition));
-                                    startActivity(intent);
-                                };
+                                adapter = new HomeAdapter(mSelectedBooks, mOTL2);
+                                rvDefault.setAdapter(adapter);
                             }
-                            adapter = new HomeAdapter(mSelectedBooks, mOTL2);
-                            rvDefault.setAdapter(adapter);
                         }
 
                         @Override
@@ -131,7 +139,10 @@ public class DefaultActivity extends AppCompatActivity implements OnItemListener
 
 
         } else {
-            call = apiInterface.getBooks();
+            call = apiInterface.getBooks(
+                    ApiClient.PASSWORD,
+                    "read_book"
+            );
             call.enqueue(new Callback<List<Book>>() {
                 @Override
                 public void onResponse(Call<List<Book>> call, Response<List<Book>> response) {
@@ -155,7 +166,7 @@ public class DefaultActivity extends AppCompatActivity implements OnItemListener
                         String searchElement = getIntent().getStringExtra("search_query");
                         Log.v(TAG, "searchElement:" + searchElement);
                         mSelectedBooks = mBooks.stream()
-                                .filter(item -> item.getName().contains(searchElement) || item.getAuthor().contains(searchElement))
+                                .filter(item -> item.getName().toLowerCase().contains(searchElement) || item.getAuthor().toLowerCase().contains(searchElement))
                                 .collect(Collectors.toList());
                         adapter = new HomeAdapter(mSelectedBooks, mOnItemListener);
                     } else {

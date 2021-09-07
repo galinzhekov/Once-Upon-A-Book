@@ -1,12 +1,5 @@
 package com.example.onceuponabook;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.SearchView;
-import androidx.appcompat.widget.Toolbar;
-import androidx.fragment.app.FragmentManager;
-import androidx.viewpager2.widget.ViewPager2;
-
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -17,13 +10,18 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SearchView;
+import androidx.appcompat.widget.Toolbar;
+import androidx.fragment.app.FragmentManager;
+import androidx.viewpager2.widget.ViewPager2;
+
 import com.example.onceuponabook.adapters.ViewPagerAdapter;
-import com.example.onceuponabook.fragments.AuthorsFragment;
-import com.example.onceuponabook.fragments.BrowseAllFragment;
-import com.example.onceuponabook.fragments.CategoriesFragment;
-import com.example.onceuponabook.fragments.HomeFragment;
 import com.example.onceuponabook.fragments.MenuFragmentDialog;
-import com.example.onceuponabook.fragments.StudentFragment;
+import com.example.onceuponabook.models.Book;
+import com.example.onceuponabook.models.ServerResponse;
+import com.example.onceuponabook.models.User;
+import com.example.onceuponabook.util.ApiClient;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -31,7 +29,12 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.tabs.TabLayout;
-import com.google.android.material.tabs.TabLayoutMediator;
+
+import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class StartActivity extends AppCompatActivity {
 
@@ -43,6 +46,8 @@ public class StartActivity extends AppCompatActivity {
     private ImageButton mCheck, mBackArrow;
     Toolbar toolbar;
     ViewPagerAdapter adapter;
+    private List<User> mUsers;
+    private boolean bIsNewUser;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -136,8 +141,66 @@ public class StartActivity extends AppCompatActivity {
             option.setOnMenuItemClickListener(item1 -> {
                 FragmentManager fm = getSupportFragmentManager();
                 MenuFragmentDialog optionMenu = MenuFragmentDialog.newInstance();
-                optionMenu.show(fm, "");
+                optionMenu.show(fm, "MenuFragmentDialog");
                 return false;
+            });
+
+            ApiInterface apiInterface = ApiClient.getApiClient().create(ApiInterface.class);
+
+
+            Call<List<User>> call;
+            call = apiInterface.getUsers(
+                    ApiClient.PASSWORD,
+                    "read_users"
+            );
+            call.enqueue(new Callback<List<User>>() {
+                @Override
+                public void onResponse(Call<List<User>> call, Response<List<User>> response) {
+                    mUsers = response.body();
+                    bIsNewUser = true;
+                    if (mUsers != null) {
+                        for (User oUser : mUsers) {
+                            if (oUser.getEmail().equals(account.getEmail())) {
+                                bIsNewUser = false;
+                                break;
+                            }
+                        }
+
+                        if (bIsNewUser) {
+                            Call<ServerResponse> callNewUser;
+                            callNewUser = apiInterface.addNewUser(
+                                    ApiClient.PASSWORD,
+                                    "add_new_user",
+                                    account.getEmail(),
+                                    account.getDisplayName()
+                            );
+                            callNewUser.enqueue(new Callback<ServerResponse>() {
+                                @Override
+                                public void onResponse(Call<ServerResponse> call, Response<ServerResponse> response) {
+                                    ServerResponse serverResponse = response.body();
+                                    if (serverResponse.getMessage() != null) {
+                                        Toast.makeText(StartActivity.this, serverResponse.getMessage(), Toast.LENGTH_SHORT).show();
+                                    } else {
+
+                                        Toast.makeText(StartActivity.this, "The user wasn't registered.", Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+
+                                @Override
+                                public void onFailure(Call<ServerResponse> call, Throwable t) {
+                                    Log.v(TAG,String.valueOf(t));
+                                    Toast.makeText(StartActivity.this, "Something went wrong.", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        }
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<List<User>> call, Throwable t) {
+                    Log.v(TAG,String.valueOf(t));
+                    Toast.makeText(StartActivity.this, "Something went wrong.", Toast.LENGTH_SHORT).show();
+                }
             });
 
             Toast.makeText(StartActivity.this, "Google ID: " + account.getId(), Toast.LENGTH_LONG).show();
@@ -163,7 +226,7 @@ public class StartActivity extends AppCompatActivity {
             } else {
                 FragmentManager fm = getSupportFragmentManager();
                 MenuFragmentDialog optionMenu = MenuFragmentDialog.newInstance();
-                optionMenu.show(fm, "");
+                optionMenu.show(fm, "MenuFragmentDialog");
             }
         }
         return super.onOptionsItemSelected(item);

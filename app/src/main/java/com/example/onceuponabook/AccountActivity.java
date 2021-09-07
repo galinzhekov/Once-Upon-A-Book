@@ -24,6 +24,7 @@ import com.example.onceuponabook.listeners.OnItemListener;
 import com.example.onceuponabook.models.Author;
 import com.example.onceuponabook.models.Book;
 import com.example.onceuponabook.models.Category;
+import com.example.onceuponabook.models.ServerResponse;
 import com.example.onceuponabook.models.User;
 import com.example.onceuponabook.util.ApiClient;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
@@ -48,7 +49,7 @@ public class AccountActivity extends AppCompatActivity implements OnItemListener
     MenuItem option;
     Toolbar toolbar;
     private List<User> mBooks, mSelectedBooks;
-    Call<Void> call;
+    Call<ServerResponse> call;
     private User mUser;
     private ImageButton mBackArrow;
     private EditText etAccountLocation, etAccountAge, etAccountWallet;
@@ -169,19 +170,21 @@ public class AccountActivity extends AppCompatActivity implements OnItemListener
             }
             case R.id.btnAccountUpdate: {
                 call = apiInterface.updateUsersInfo(
+                        ApiClient.PASSWORD,
+                        "update_user_info",
                         mUser.getUser_id(),
                         Double.parseDouble(etAccountWallet.getText().toString()),
                         etAccountLocation.getText().toString(),
                         Integer.parseInt(etAccountAge.getText().toString())
                 );
-                call.enqueue(new Callback<Void>() {
+                call.enqueue(new Callback<ServerResponse>() {
                     @Override
-                    public void onResponse(Call<Void> call, Response<Void> response) {
+                    public void onResponse(Call<ServerResponse> call, Response<ServerResponse> response) {
 
                     }
 
                     @Override
-                    public void onFailure(Call<Void> call, Throwable t) {
+                    public void onFailure(Call<ServerResponse> call, Throwable t) {
 
                     }
                 });

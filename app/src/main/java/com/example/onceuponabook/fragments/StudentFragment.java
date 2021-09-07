@@ -71,7 +71,10 @@ public class StudentFragment extends Fragment implements OnItemListener {
         rvStudents.setLayoutManager(new GridLayoutManager(mContext, 3));
         ApiInterface apiInterface = ApiClient.getApiClient().create(ApiInterface.class);
 
-        call = apiInterface.getBooks();
+        call = apiInterface.getBooks(
+                ApiClient.PASSWORD,
+                "read_book"
+        );
 
 
         call.enqueue(new Callback<List<Book>>() {

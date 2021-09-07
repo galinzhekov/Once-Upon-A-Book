@@ -3,6 +3,9 @@
     package="com.example.onceuponabook">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.CAMERA"/>
 
     <application
         android:allowBackup="true"
@@ -13,14 +16,14 @@
         android:theme="@style/Theme.AppCompat.NoActionBar"
         android:usesCleartextTraffic="true"
         android:windowSoftInputMode="adjustPan">
-        <activity android:name=".StatisticActivity"></activity>
+        <activity android:name=".UploadBookActivity"></activity>
+        <activity android:name=".StatisticActivity" />
         <activity android:name=".AdminActivity" />
         <activity android:name=".AccountActivity" />
         <activity
             android:name=".DefaultActivity"
             android:windowSoftInputMode="adjustPan" />
         <activity android:name=".PdfActivity" />
-        <activity android:name=".OpenPDFActivity" />
         <activity android:name=".BookActivity" />
         <activity android:name=".StartActivity">
             <intent-filter>

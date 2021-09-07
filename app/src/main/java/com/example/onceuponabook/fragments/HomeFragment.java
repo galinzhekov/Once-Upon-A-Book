@@ -99,19 +99,24 @@ public class HomeFragment extends Fragment {
 
         ApiInterface apiInterface = ApiClient.getApiClient().create(ApiInterface.class);
 
-        call = apiInterface.getPopularBooksByMonth();
+        call = apiInterface.getPopularBooksByMonth(
+                ApiClient.PASSWORD,
+                "current_month_popular_books"
+        );
 
         call.enqueue(new Callback<List<Book>>() {
             @Override
             public void onResponse(Call<List<Book>> call, Response<List<Book>> response) {
                 mBooks = response.body();
-                mOnItemListener = (v, iPosition) -> {
-                    Intent intent = new Intent(mContext, BookActivity.class);
-                    intent.putExtra("selected_book", mBooks.get(iPosition));
-                    startActivity(intent);
-                };
-                adapter = new HomeAdapter(mBooks, mOnItemListener);
-                rvPopularBooks.setAdapter(adapter);
+                if (mBooks != null) {
+                    mOnItemListener = (v, iPosition) -> {
+                        Intent intent = new Intent(mContext, BookActivity.class);
+                        intent.putExtra("selected_book", mBooks.get(iPosition));
+                        startActivity(intent);
+                    };
+                    adapter = new HomeAdapter(mBooks, mOnItemListener);
+                    rvPopularBooks.setAdapter(adapter);
+                }
             }
 
             @Override
@@ -120,7 +125,10 @@ public class HomeFragment extends Fragment {
             }
         });
 
-        call = apiInterface.getBooks();
+        call = apiInterface.getBooks(
+                ApiClient.PASSWORD,
+                "read_book"
+        );
 
         call.enqueue(new Callback<List<Book>>() {
             @Override
@@ -147,39 +155,47 @@ public class HomeFragment extends Fragment {
         if (account != null) {
             String email = account.getEmail();
             Log.v(TAG, "email: " + email);
-            call = apiInterface.getRecommendedBooks(email);
+            call = apiInterface.getRecommendedBooks(
+                    ApiClient.PASSWORD,
+                    "recommended_books",
+                    email
+            );
             call.enqueue(new Callback<List<Book>>() {
                 @Override
                 public void onResponse(Call<List<Book>> call1, Response<List<Book>> response) {
                     mBooks = response.body();
-                    boolean isInLibrary = false, isInThisCategory = false;
-                    for (Book book : mAllBooks) {
-                        for (Book userBook : mBooks) {
-                            Log.v(TAG, "book: " + userBook.getName());
-                            if (book.getId() == userBook.getId()) {
-                                isInLibrary = true;
+                    if (mBooks != null && mAllBooks != null) {
 
+
+                        boolean isInLibrary = false, isInThisCategory = false;
+                        for (Book book : mAllBooks) {
+                            for (Book userBook : mBooks) {
+                                Log.v(TAG, "book: " + userBook.getName());
+                                if (book.getId() == userBook.getId()) {
+                                    isInLibrary = true;
+
+                                }
+                                if (book.getCategory().contains(userBook.getCategory())) {
+                                    isInThisCategory = true;
+                                }
                             }
-                            if (book.getCategory().contains(userBook.getCategory())) {
-                                isInThisCategory = true;
+                            if (!isInLibrary && isInThisCategory) {
+                                mRecommendedBooks.add(book);
                             }
+                            isInLibrary = false;
+                            isInThisCategory = false;
                         }
-                        if (!isInLibrary && isInThisCategory) {
-                            mRecommendedBooks.add(book);
-                        }
-                        isInLibrary = false;
-                        isInThisCategory = false;
+                        mRecommendedBooks = mRecommendedBooks.stream().distinct().collect(Collectors.toList());
+
+                        Log.v(TAG, "books: " + mRecommendedBooks);
+                        mOnItemListener = (v, iPosition) -> {
+                            Intent intent = new Intent(mContext, BookActivity.class);
+                            intent.putExtra("selected_book", mRecommendedBooks.get(iPosition));
+                            startActivity(intent);
+                        };
+                        adapter = new HomeAdapter(mRecommendedBooks, mOnItemListener);
+                        rvRecommendedForYou.setAdapter(adapter);
                     }
-                    mRecommendedBooks = mRecommendedBooks.stream().distinct().collect(Collectors.toList());
-
-                    Log.v(TAG, "books: " + mRecommendedBooks);
-                    mOnItemListener = (v, iPosition) -> {
-                        Intent intent = new Intent(mContext, BookActivity.class);
-                        intent.putExtra("selected_book", mRecommendedBooks.get(iPosition));
-                        startActivity(intent);
-                    };
-                    adapter = new HomeAdapter(mRecommendedBooks, mOnItemListener);
-                    rvRecommendedForYou.setAdapter(adapter);
                 }
 
                 @Override
@@ -189,7 +205,11 @@ public class HomeFragment extends Fragment {
             });
         } else {
             String email = "";
-            call = apiInterface.getRecommendedBooks(email);
+            call = apiInterface.getRecommendedBooks(
+                    ApiClient.PASSWORD,
+                    "recommended_books",
+                    email
+            );
             call.enqueue(new Callback<List<Book>>() {
                 @Override
                 public void onResponse(Call<List<Book>> call, Response<List<Book>> response) {
@@ -210,7 +230,10 @@ public class HomeFragment extends Fragment {
             });
         }
 
-        call = apiInterface.getNewBooks();
+        call = apiInterface.getNewBooks(
+                ApiClient.PASSWORD,
+                "read_new_books"
+        );
 
         call.enqueue(new Callback<List<Book>>() {
             @Override

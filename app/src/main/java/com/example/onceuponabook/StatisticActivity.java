@@ -76,7 +76,10 @@ public class StatisticActivity extends AppCompatActivity implements OnItemListen
         rvStatistic.setLayoutManager(linearLayoutManager);
         ApiInterface apiInterface = ApiClient.getApiClient().create(ApiInterface.class);
 
-        callBooks = apiInterface.getBooks();
+        callBooks = apiInterface.getBooks(
+                ApiClient.PASSWORD,
+                "read_book"
+        );
         callBooks.enqueue(new Callback<List<Book>>() {
             @Override
             public void onResponse(Call<List<Book>> call, Response<List<Book>> response) {
@@ -90,44 +93,49 @@ public class StatisticActivity extends AppCompatActivity implements OnItemListen
         });
 
         if (getIntent().hasExtra("bought")) {
-            callBoughtBooks = apiInterface.getBooksBought();
+            callBoughtBooks = apiInterface.getBooksBought(
+                    ApiClient.PASSWORD,
+                    "read_books_bought"
+            );
             callBoughtBooks.enqueue(new Callback<List<BooksBought>>() {
                 @Override
                 public void onResponse(Call<List<BooksBought>> call, Response<List<BooksBought>> response) {
                     mBooksBought = response.body();
                     mUniqueBooksBought = new ArrayList<>();
-                    for (BooksBought booksBought : mBooksBought) {
-                        boolean is_added = false;
-                        for (BooksBought uniqueBooksBought : mUniqueBooksBought) {
-                            if (uniqueBooksBought.getBook_id() == booksBought.getBook_id()) {
-                                is_added = true;
-                            }
-                        }
-                        if (! is_added) {
-                            mUniqueBooksBought.add(booksBought);
-                        }
-                    }
-                    List<Integer> frequency, backgroundPercentage;
-                    frequency = new ArrayList<>();
-                    backgroundPercentage = new ArrayList<>();
-                    int count = 0, size = mBooksBought.size();
-                    for (BooksBought uniqueBooksBought : mUniqueBooksBought) {
-                        count = 0;
+                    if (mBooksBought != null) {
                         for (BooksBought booksBought : mBooksBought) {
-                            if (booksBought.getBook_id() == uniqueBooksBought.getBook_id()) {
-                                count++;
+                            boolean is_added = false;
+                            for (BooksBought uniqueBooksBought : mUniqueBooksBought) {
+                                if (uniqueBooksBought.getBook_id() == booksBought.getBook_id()) {
+                                    is_added = true;
+                                }
+                            }
+                            if (! is_added) {
+                                mUniqueBooksBought.add(booksBought);
                             }
                         }
-                        frequency.add(count);
+                        List<Integer> frequency, backgroundPercentage;
+                        frequency = new ArrayList<>();
+                        backgroundPercentage = new ArrayList<>();
+                        int count = 0, size = mBooksBought.size();
+                        for (BooksBought uniqueBooksBought : mUniqueBooksBought) {
+                            count = 0;
+                            for (BooksBought booksBought : mBooksBought) {
+                                if (booksBought.getBook_id() == uniqueBooksBought.getBook_id()) {
+                                    count++;
+                                }
+                            }
+                            frequency.add(count);
+                        }
+                        int x = 100 / frequency.get(0);
+                        Log.v(TAG, String.valueOf(frequency));
+                        for (Integer i : frequency) {
+                            int sum = x * i * 100;
+                            backgroundPercentage.add(sum);
+                        }
+                        statisticBooksAdapter = new StatisticBooksAdapter(mUniqueBooksBought, mOnItemListener, backgroundPercentage);
+                        rvStatistic.setAdapter(statisticBooksAdapter);
                     }
-                    int x = 100 / frequency.get(0);
-                    Log.v(TAG, String.valueOf(frequency));
-                    for (Integer i : frequency) {
-                        int sum = x * i * 100;
-                        backgroundPercentage.add(sum);
-                    }
-                    statisticBooksAdapter = new StatisticBooksAdapter(mUniqueBooksBought, mOnItemListener, backgroundPercentage);
-                    rvStatistic.setAdapter(statisticBooksAdapter);
                 }
 
                 @Override

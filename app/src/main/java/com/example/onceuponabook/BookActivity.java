@@ -26,6 +26,7 @@ import com.example.onceuponabook.models.Book;
 import com.example.onceuponabook.models.BooksBought;
 import com.example.onceuponabook.models.BooksRated;
 import com.example.onceuponabook.models.Category;
+import com.example.onceuponabook.models.ServerResponse;
 import com.example.onceuponabook.models.User;
 import com.example.onceuponabook.util.ApiClient;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
@@ -44,17 +45,19 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class BookActivity extends AppCompatActivity implements View.OnClickListener {
-    int RC_SIGN_IN = 0, totalNumberRatings = 0, mUserId = 0;
+    int RC_SIGN_IN = 0, totalNumberRatings = 0, mUserId = 0, downloads;
     float ratings = 0, avgRatings = 0;
     GoogleSignInClient mGoogleSignInClient;
     private static final String TAG = "BookActivity";
     private GoogleSignInAccount account;
     MenuItem option;
     Toolbar toolbar;
-    Call<List<BooksRated>> callBooksRated, callUpdateBooksRated;
+    Call<List<BooksRated>> callBooksRated;
+    Call<Void> callUpdateBooksRated;
     Call<List<BooksBought>> callBooksBought;
-    Call<Void> callAddBooksBought;
-    Call<List<User>> callUser, callUpdateWallet;
+    Call<ServerResponse> callAddBooksBought;
+    Call<List<User>> callUser;
+    Call<ServerResponse> callUpdateWallet;
     private List<BooksRated> mBooksRated;
     private List<BooksBought> mBooksBought;
     private List<User> mUsers;
@@ -86,6 +89,7 @@ public class BookActivity extends AppCompatActivity implements View.OnClickListe
         toolbar = findViewById(R.id.toolbar);
         mBackArrow = findViewById(R.id.toolbar_back_arrow);
         rbBookScore = findViewById(R.id.rbBookScore);
+        downloads = 0;
 
         DecimalFormat df = new DecimalFormat("#.##");
         bIsBookBought = false;
@@ -112,12 +116,16 @@ public class BookActivity extends AppCompatActivity implements View.OnClickListe
 
         ApiInterface apiInterface = ApiClient.getApiClient().create(ApiInterface.class);
 
-        callBooksRated = apiInterface.getBooksRated();
+        callBooksRated = apiInterface.getBooksRated(
+                ApiClient.PASSWORD,
+                "read_books_rated"
+        );
         callBooksRated.enqueue(new Callback<List<BooksRated>>() {
             @Override
             public void onResponse(Call<List<BooksRated>> call, Response<List<BooksRated>> response) {
                 mBooksRated = response.body();
                 for (BooksRated booksRated : mBooksRated) {
+                    Log.v(TAG, String.valueOf(booksRated.getRating()));
                     if (mBook.getId() == booksRated.getBook_id()) {
                         totalNumberRatings++;
                         ratings += Double.parseDouble(booksRated.getRating());
@@ -139,8 +147,14 @@ public class BookActivity extends AppCompatActivity implements View.OnClickListe
             btnBookBuy.setOnClickListener(v -> Toast.makeText(getApplicationContext(), "You must be logged in in order to open the product.", Toast.LENGTH_SHORT).show());
         } else {
 
-            callBooksBought = apiInterface.getBooksBought();
-            callUser = apiInterface.getUsers();
+            callBooksBought = apiInterface.getBooksBought(
+                    ApiClient.PASSWORD,
+                    "read_books_bought"
+            );
+            callUser = apiInterface.getUsers(
+                    ApiClient.PASSWORD,
+                    "read_users"
+            );
 
             callUser.enqueue(new Callback<List<User>>() {
                 @Override
@@ -157,12 +171,22 @@ public class BookActivity extends AppCompatActivity implements View.OnClickListe
                                 public void onResponse(Call<List<BooksBought>> call, Response<List<BooksBought>> response) {
                                     mBooksBought = response.body();
 
-                                    for (BooksBought booksBought : mBooksBought) {
-                                        if (booksBought.getBook_id() == mBook.getId() && booksBought.getEmail().equals(account.getEmail())) {
-                                            btnBookBuy.setText("Open File");
-                                            bIsBookBought = true;
-                                            break;
+                                    if (mBooksBought != null) {
+                                        for (BooksBought booksBought : mBooksBought) {
+                                            if (booksBought.getBook_id() == mBook.getId() && booksBought.getEmail().equals(account.getEmail())) {
+                                                btnBookBuy.setText("Open File");
+                                                bIsBookBought = true;
+                                                break;
+                                            }
                                         }
+
+                                        for (BooksBought booksBought : mBooksBought) {
+                                            if (booksBought.getBook_id() == mBook.getId()) {
+                                                downloads++;
+                                            }
+                                        }
+                                        tvBookDownloads.setText(String.valueOf(downloads));
+
                                     }
 
                                     Log.v(TAG, "mBooksBought " + String.valueOf(mBooksBought));
@@ -181,26 +205,34 @@ public class BookActivity extends AppCompatActivity implements View.OnClickListe
                                             rbBookScore.setOnRatingBarChangeListener(new RatingBar.OnRatingBarChangeListener() {
                                                 int bookID = mBook.getId(), userID = mUser.getUser_id();
                                                 double dRating = 0;
-                                                String query_action = "update";
 
                                                 @Override
                                                 public void onRatingChanged(RatingBar ratingBar, float rating, boolean fromUser) {
                                                     dRating = rating;
-                                                    callUpdateBooksRated = apiInterface.updateBooksRated(bookID, userID, dRating, query_action);
-                                                    callUpdateBooksRated.enqueue(new Callback<List<BooksRated>>() {
+                                                    callUpdateBooksRated = apiInterface.updateBooksRated(
+                                                            ApiClient.PASSWORD,
+                                                            "update_books_rated",
+                                                            bookID,
+                                                            userID,
+                                                            dRating
+                                                    );
+                                                    callUpdateBooksRated.enqueue(new Callback<Void>() {
                                                         @Override
-                                                        public void onResponse(Call<List<BooksRated>> call, Response<List<BooksRated>> response) {
-
+                                                        public void onResponse(Call<Void> call, Response<Void> response) {
+                                                            Log.v(TAG,String.valueOf(dRating));
                                                         }
 
                                                         @Override
-                                                        public void onFailure(Call<List<BooksRated>> call, Throwable t) {
-
+                                                        public void onFailure(Call<Void> call, Throwable t) {
+                                                            Log.v(TAG,String.valueOf(t));
                                                         }
                                                     });
                                                     totalNumberRatings = 0;
                                                     ratings = 0;
-                                                    callBooksRated = apiInterface.getBooksRated();
+                                                    callBooksRated = apiInterface.getBooksRated(
+                                                            ApiClient.PASSWORD,
+                                                            "read_books_rated"
+                                                    );
                                                     callBooksRated.enqueue(new Callback<List<BooksRated>>() {
                                                         @Override
                                                         public void onResponse(Call<List<BooksRated>> call, Response<List<BooksRated>> response) {
@@ -208,7 +240,11 @@ public class BookActivity extends AppCompatActivity implements View.OnClickListe
                                                             for (BooksRated booksRated : mBooksRated) {
                                                                 if (mBook.getId() == booksRated.getBook_id()) {
                                                                     totalNumberRatings++;
-                                                                    ratings += Double.parseDouble(booksRated.getRating());
+                                                                    double current_rating = Double.parseDouble(booksRated.getRating());
+                                                                    if (mUser.getUser_id() == booksRated.getUser_id()) {
+                                                                        current_rating = dRating;
+                                                                    }
+                                                                    ratings += current_rating;
                                                                     avgRatings = ratings / totalNumberRatings;
                                                                     tvBookRating.setText(df.format(avgRatings));
                                                                     tvBookReviews.setText(String.valueOf(totalNumberRatings) + " reviews");
@@ -229,15 +265,21 @@ public class BookActivity extends AppCompatActivity implements View.OnClickListe
                                             });
                                         } else {
                                             rbBookScore.setOnRatingBarChangeListener((ratingBar, rating, fromUser) -> {
-                                                callUpdateBooksRated = apiInterface.updateBooksRated(mBook.getId(), mUser.getUser_id(), rating, "insert");
-                                                callUpdateBooksRated.enqueue(new Callback<List<BooksRated>>() {
+                                                callUpdateBooksRated = apiInterface.updateBooksRated(
+                                                        ApiClient.PASSWORD,
+                                                        "insert_books_rated",
+                                                        mBook.getId(),
+                                                        mUser.getUser_id(),
+                                                        rating
+                                                );
+                                                callUpdateBooksRated.enqueue(new Callback<Void>() {
                                                     @Override
-                                                    public void onResponse(Call<List<BooksRated>> call1, Response<List<BooksRated>> response1) {
+                                                    public void onResponse(Call<Void> call1, Response<Void> response1) {
 
                                                     }
 
                                                     @Override
-                                                    public void onFailure(Call<List<BooksRated>> call1, Throwable t) {
+                                                    public void onFailure(Call<Void> call1, Throwable t) {
 
                                                     }
                                                 });
@@ -258,31 +300,56 @@ public class BookActivity extends AppCompatActivity implements View.OnClickListe
                                             if (difference < 0) {
                                                 Toast.makeText(getApplicationContext(), "You don't have enough money", Toast.LENGTH_SHORT).show();
                                             } else {
-                                                callAddBooksBought = apiInterface.addBooksBought(mBook.getId(), mUser.getUser_id(), mBook.getPrice());
-                                                callAddBooksBought.enqueue(new Callback<Void>() {
+                                                callAddBooksBought = apiInterface.addBooksBought(
+                                                        ApiClient.PASSWORD,
+                                                        "add_books_bought",
+                                                        mBook.getId(),
+                                                        mUser.getUser_id(),
+                                                        mBook.getPrice()
+                                                );
+                                                callAddBooksBought.enqueue(new Callback<ServerResponse>() {
                                                     @Override
-                                                    public void onResponse(Call<Void> call, Response<Void> response) {
+                                                    public void onResponse(Call<ServerResponse> call, Response<ServerResponse> response) {
+                                                        ServerResponse serverResponse = response.body();
+                                                        if (serverResponse.getMessage() != null) {
+                                                            Toast.makeText(BookActivity.this, serverResponse.getMessage(), Toast.LENGTH_SHORT).show();
+                                                        } else {
+                                                            Toast.makeText(BookActivity.this, "The book wasn't bought.", Toast.LENGTH_SHORT).show();
+                                                        }
                                                         Intent intent = new Intent(getApplicationContext(), BookActivity.class);
                                                         intent.putExtra("selected_book", mBook);
                                                         startActivity(intent);
                                                     }
 
                                                     @Override
-                                                    public void onFailure(Call<Void> call, Throwable t) {
+                                                    public void onFailure(Call<ServerResponse> call, Throwable t) {
                                                         Log.v(TAG, "Failure: " + t.toString());
+                                                        Toast.makeText(BookActivity.this, "Something went wrong.", Toast.LENGTH_SHORT).show();
                                                     }
                                                 });
 
-                                                callUpdateWallet = apiInterface.updateWallet(difference, mUser.getUser_id());
-                                                callUpdateWallet.enqueue(new Callback<List<User>>() {
+                                                callUpdateWallet = apiInterface.updateWallet(
+                                                        ApiClient.PASSWORD,
+                                                        "update_wallet",
+                                                        difference,
+                                                        mUser.getUser_id()
+                                                );
+                                                callUpdateWallet.enqueue(new Callback<ServerResponse>() {
                                                     @Override
-                                                    public void onResponse(Call<List<User>> call, Response<List<User>> response) {
+                                                    public void onResponse(Call<ServerResponse> call, Response<ServerResponse> response) {
+                                                        ServerResponse serverResponse = response.body();
+                                                        if (serverResponse.getMessage() != null) {
+                                                            Toast.makeText(BookActivity.this, serverResponse.getMessage(), Toast.LENGTH_SHORT).show();
+                                                        } else {
 
+                                                            Toast.makeText(BookActivity.this, "The user wasn't registered.", Toast.LENGTH_SHORT).show();
+                                                        }
                                                     }
 
                                                     @Override
-                                                    public void onFailure(Call<List<User>> call, Throwable t) {
-
+                                                    public void onFailure(Call<ServerResponse> call, Throwable t) {
+                                                        Log.v(TAG,String.valueOf(t));
+                                                        Toast.makeText(BookActivity.this, "Something went wrong.", Toast.LENGTH_SHORT).show();
                                                     }
                                                 });
 
@@ -298,6 +365,7 @@ public class BookActivity extends AppCompatActivity implements View.OnClickListe
                             });
                         }
                     }
+
                 }
 
                 @Override
