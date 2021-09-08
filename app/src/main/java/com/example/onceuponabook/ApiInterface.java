@@ -2,6 +2,7 @@ package com.example.onceuponabook;
 
 import com.example.onceuponabook.models.Author;
 import com.example.onceuponabook.models.Book;
+import com.example.onceuponabook.models.BooksAdded;
 import com.example.onceuponabook.models.BooksBought;
 import com.example.onceuponabook.models.BooksRated;
 import com.example.onceuponabook.models.Category;
@@ -86,6 +87,13 @@ public interface ApiInterface {
     @FormUrlEncoded
     @POST("user.php")
     Call<List<User>> getUsers(
+            @Field("access") String password,
+            @Field("selected_method") String classMethod
+    );
+
+    @FormUrlEncoded
+    @POST("user.php")
+    Call<List<BooksAdded>> getModerators(
             @Field("access") String password,
             @Field("selected_method") String classMethod
     );
